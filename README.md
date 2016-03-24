@@ -2,8 +2,8 @@
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg)
 
-Testdown is a kind of stupid QA robot that clicks around in your web
-app, following your simple instructions to verify that the thing
+Testdown is a kind of QA robot that clicks around in your web
+app, following simple instructions to verify that the thing
 basically works.
 
 You provide instructions in plain English. The following paragraph is
