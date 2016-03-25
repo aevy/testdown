@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>Testdown: literate smoke tests for web apps</title>
+<style>
+* { box-sizing: border-box }
+html { font: 20px/1.5 "courier new", monospace }
+body { margin: 0 }
+section { padding: 0 2rem }
+section:first-child { padding-top: 4rem; padding-bottom: 2rem }
+section > div { max-width: 34rem; margin: 0 auto }
+.logo { width: 4rem; height: 4rem; }
+samp, code { font-family: inherit }
+samp { display: block; text-align: center; font-style: italic }
+#syntax { background: #ffd; border: 1px solid #dde }
+#syntax > div { padding: .5rem 0 }
+dt { margin-top: 1rem }
+b { opacity: 0.8 }
+footer { padding-bottom: 2rem; }
+</style>
+<body>
+
+<section>
+<div>
+
+<img class=logo alt="Hand with pen" src="hand-with-pen.svg">
+
+<p><b>Testdown</b> is a language for writing website tests in plain
+text, like this:
+
+<p><samp>Click the recipe "banana smoothie". Wait. Look at the recipe
+pane. See some ingredients: "banana", "honey".
+</samp>
+
+<p>We aim for a sweet spot. A handful of simple verbs are enough to
+write tests that exercise most of a web site's functionality.
+
+<p>Meaningful names instead of cryptic selectors make test sensible
+and maintainable. Some easy modifications to your HTML help test
+runners understand these names.
+
+<p>Test suites are valid Markdown files, so non-coders can view them
+as rich text documents.
+
+<p><b>Testdown Robot</b> is a JavaScript-based test runner.  Run tests
+from your regular browser using the test HUD, or in continuous
+integration using WebDriver.
+
+<p>Thus far, the robot only works with single-page apps, because it
+runs inside the site's own scripting context. Support for multi-page
+sites would be nice, and if you want to work on it, we'll try to help.
+
+</div></section>
+
+<section id=syntax><div>
+<p><b>Notes:</b>
+
+<p>A noun phrase like <i>the thing</i> will locate an element whose
+role is set to "thing".
+
+<p>You can also use <i>the thing "foo"</i> to select a thing that
+contains the text "foo" anywhere in its content.
+
+<p>"Look at" changes where the robot looks for elements. It starts at
+the root and resets with every scenario.
+
+<p>You can use compound words like "recipe search box" for roles, too.
+
+<p><b>Sentence types:</b>
+
+<dl>
+<dt>Look at the thing.
+<dd>Locate the thing and henceforth only see things inside of it.
+<dt>Now look at the thing.
+<dd>Reset the gaze and then look at the thing.
+<dt>See a thing.
+<dd>Verify the visibility of a thing.
+<dt>See a thing: "foo", "bar".
+<dd>Verify the visibility of a thing whose inner text contains "foo"
+and "bar".
+<dt>See some things: "foo", "bar".
+<dd>Verify the visibility of two things whose inner texts contain
+"foo" and "bar" respectively.
+<dt>See some things.
+<dd>Verify that at least 3 things are visible. This number is
+configurable.
+<dt>See exactly 5 things.
+<dd>Verify that 5 things are visible, no more or less.
+<dt>Click the thing.
+<dd>Locate the thing and click it.
+<dt>Wait.
+<dd>Waits for a configurable predicate to become true. The default is
+to wait until no element has the role "spinner".
+<dt>Wait for the thing.
+<dd>Waits for the thing to be visible.
+<dt>Enter "foo" into the thing.
+<dd>Locate the thing, which should be an input or textfield, and enter
+"foo" into it.
+<dt>Scroll to the bottom of the thing.
+<dd>Locate the thing and move its scrollbar to the bottom.
+<dt>Scroll to the top of the thing.
+<dd>Locate the thing and move its scrollbar to the top.
+</dl>
+
+</div></section>
+
+<section><div>
+<footer>
+
+<p>The <a href="https://github.com/ciliatools/testdown">Testdown
+code</a> is free software available under the MIT license.
+
+<p>Contributions are welcome. If you use Testdown, I'd love to hear
+about it. Let me know at mikael@brockman.se.
