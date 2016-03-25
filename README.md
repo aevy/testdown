@@ -26,7 +26,7 @@ need to annotate the component nodes with a "role" attribute, like
 Giving definite names to user interface concepts has several benefits.
 Tests become cleaner from not being cluttered with arcane selector
 syntaxes, and by writing tests on this semantic level, you avoid
-coupling the suite to implementation details. Plus, it can hel with
+coupling the suite to implementation details. Plus, it can help with
 establishing a ubiquitous language for talking about interface
 components.
 
