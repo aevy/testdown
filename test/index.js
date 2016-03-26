@@ -361,7 +361,7 @@ describe("runner", function() {
       })
 
       it("finds a present DOM node", function() {
-        insertNodeWithRole(body, "thing")
+        insertNodeWithRole(body, "div", "thing")
         return runSentence(parseSentence("Wait for the thing."), {
           place: body
         }).then(x => {
@@ -370,7 +370,7 @@ describe("runner", function() {
       })
 
       it("finds a DOM node that appears after a while", function() {
-        setTimeout(() => insertNodeWithRole(body, "thing"), 200)
+        setTimeout(() => insertNodeWithRole(body, "div", "thing"), 200)
         return runSentence(parseSentence("Wait for the thing."), {
           place: body
         }).then(x => {
@@ -381,7 +381,7 @@ describe("runner", function() {
 
     describe("Click...", function() {
       it("clicks the button", function() {
-        const button = insertNodeWithRole(body, "button")
+        const button = insertNodeWithRole(body, "div", "button")
         const click = spy()
         const focus = spy()
         return runSentence(parseSentence("Click the button."), {
@@ -455,7 +455,7 @@ describe("Text runner with React in JSDOM", function() {
   })
 })
 
-function insertNodeWithRole(root, role) {
-  root.innerHTML += `<div data-role="${role}"/>`
+function insertNodeWithRole(root, type, role) {
+  root.innerHTML += `<${type} data-role="${role}"/>`
   return root.children[root.children.length - 1]
 }
