@@ -1,53 +1,36 @@
 <!doctype html>
 <meta charset=utf-8>
 <title>Testdown: literate smoke tests for web apps</title>
-<style>
-* { box-sizing: border-box }
-html { font: 20px/1.5 "courier new", monospace }
-body { margin: 0 }
-section { padding: 0 2rem }
-section:first-child { padding-top: 4rem; padding-bottom: 2rem }
-section > div { max-width: 34rem; margin: 0 auto }
-.logo { width: 4rem; height: 4rem; }
-samp, code { font-family: inherit }
-samp { display: block; text-align: center; font-style: italic }
-#syntax { background: #ffd; border: 1px solid #dde }
-#syntax > div { padding: .5rem 0 }
-dt { margin-top: 1rem }
-b { opacity: 0.8 }
-footer { padding: 2rem 0; }
-</style>
+<link rel=stylesheet href=style/index.css>
 <body>
-
 <section>
 <div>
 
 <img class=logo alt="Hand with pen" src="hand-with-pen.svg">
 
 <p><b>Testdown</b> is a language for writing website tests in plain
-text, like this:
+text:
 
 <p><samp>Click the recipe "banana smoothie". Wait. Look at the recipe
 pane. See some ingredients: "banana", "honey".
 </samp>
 
-<p>We aim for a sweet spot. A handful of simple verbs are enough to
-write tests that exercise most of a web site's functionality.
+<p>The simple language encourages high-level testing. A handful of
+verbs are enough to exercise most of a web site's functionality.
 
 <p>Meaningful names instead of cryptic selectors make test sensible
-and maintainable. Some easy modifications to your HTML help test
-runners understand these names.
+and maintainable.
 
 <p>Test suites are valid Markdown files, so non-coders can view them
 as rich text documents.
 
 <p><b>Testdown Robot</b> is a JavaScript-based test runner.  Run tests
-from your regular browser using the test HUD, or in continuous
-integration using WebDriver.
+from your regular browser using the test <abbr title="Heads-Up
+Display">HUD</abbr>, or in continuous integration using WebDriver.
 
-<p>Thus far, the robot only works with single-page apps, because it
-runs inside the site's own scripting context. Support for multi-page
-sites would be nice, and if you want to work on it, we'll try to help.
+<p>Thus far, the robot only works with single-page apps. Support for
+multi-page sites would be nice, and if you want to work on it, we'll
+try to help.
 
 </div></section>
 

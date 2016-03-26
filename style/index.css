@@ -1,0 +1,35 @@
+* { box-sizing: border-box }
+#syntax > div { padding: .5rem 0; }
+#syntax { background: #ffd; border: 2px solid rgba(0, 0, 0, 0.2); }
+.logo { width: 4rem; height: 4rem; }
+a { text-decoration: none; border-bottom: 1px solid currentcolor; }
+b { opacity: 0.8; }
+body { margin: 0; }
+dt { margin-top: 1rem; }
+footer { padding: 2rem 0; }
+html { font: 19px/1.5 "Courier Prime Sans", "courier new", courier, monospace; }
+samp { display: block; text-align: center; font-style: italic; }
+samp, code { font-family: inherit; }
+section > div { max-width: 34rem; margin: 0 auto; }
+section { padding: 0 2rem; }
+section:first-child { padding-top: 2rem; padding-bottom: 2rem; }
+
+@font-face {
+  font-family: 'Courier Prime Sans';
+  src: url(fonts/Courier%20Prime%20Sans.woff),
+       url(fonts/Courier%20Prime%20Sans.ttf);
+}
+
+@font-face {
+  font-family: 'Courier Prime Sans';
+  src: url(fonts/Courier%20Prime%20Sans%20Bold.woff),
+       url(fonts/Courier%20Prime%20Sans%20Bold.ttf);
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Courier Prime Sans';
+  src: url(fonts/Courier%20Prime%20Sans%20Italic.woff),
+       url(fonts/Courier%20Prime%20Sans%20Italic.ttf);
+  font-style: italic;
+}
