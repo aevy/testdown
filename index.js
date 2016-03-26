@@ -240,14 +240,16 @@ function contains(text, snippets) {
 function filterCandidates(nodeList, description) {
   const matches = []
   for (let i = 0; i < nodeList.length; i++) {
-    const text = (
-      nodeList[i].value || nodeList[i].innerText || nodeList[i].textContent
-    )
+    let text = getTextContentOfNode(nodeList[i])
     if (!description || contains(text, description.quote)) {
       matches.push(nodeList[i])
     }
   }
   return matches
+}
+
+function getTextContentOfNode(node) {
+  return node.value || node.innerText || node.textContent
 }
 
 const WAIT_TIMEOUT_SECS = 10
