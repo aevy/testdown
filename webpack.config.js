@@ -2,20 +2,20 @@ var webpack = require("webpack")
 var html = require("html-webpack-plugin")
 module.exports = [
   {
-    name: "test",
+    name: "example",
     target: "web",
     devtool: "inline-source-map",
     output: {
-      path: "dist/test",
+      path: "dist/example",
       publicPath: "/",
       filename: "[name].js",
     },
     entry: {
-      index: "./metatest/"
+      index: "./example"
     },
     plugins: [
       new html({
-        title: "Testdown Metatest"
+        title: "Testdown Example"
       })
     ],
     module: {

@@ -1,5 +1,9 @@
 import {
-  parseSuite, parseSentence, startScenario, runSentence
+  parseSuite,
+  parseSentence,
+  runSentence,
+  locate,
+  retrying,
 } from "../dist"
 
 import assert from "assert"
@@ -322,14 +326,6 @@ function makeSuite(...scenarios) {
 }
 
 describe("runner", function() {
-  it("should run empty scenario", function(done) {
-    return startScenario(makeScenario(), {
-      onScenarioDone: function() {
-        done()
-      }
-    })
-  })
-
   describe("sentences", function() {
     const body = jsdom("<!doctype html><body></body>").body
     beforeEach(() => { body.innerHTML = "" })
@@ -363,7 +359,10 @@ describe("runner", function() {
       it("finds a present DOM node", function() {
         insertNodeWithRole(body, "div", "thing")
         return runSentence(parseSentence("Wait for the thing."), {
-          place: body
+          place: body,
+          configuration: {
+            locate
+          }
         }).then(x => {
           assert.equal(x, null)
         })
@@ -372,7 +371,10 @@ describe("runner", function() {
       it("finds a DOM node that appears after a while", function() {
         setTimeout(() => insertNodeWithRole(body, "div", "thing"), 200)
         return runSentence(parseSentence("Wait for the thing."), {
-          place: body
+          place: body,
+          configuration: {
+            locate: retrying({ attempts: 3, delay: 100 }, locate)
+          }
         }).then(x => {
           assert.equal(x, null)
         })
@@ -386,7 +388,7 @@ describe("runner", function() {
         const focus = spy()
         return runSentence(parseSentence("Click the button."), {
           place: body,
-          configuration: { click, focus }
+          configuration: { click, focus, locate: locate }
         }).then(x => {
           assert.equal(x, null)
           assert.ok(click.calledWith(button))
@@ -440,14 +442,14 @@ describe("Text runner with React in JSDOM", function() {
   }
 
   it("sees the initial counter", function() {
-    return run(`See a counter: "1".`)
+    return run(`See a counter: "1".`, { locate })
   })
 
   it("clicks the button", function() {
     const click = spy()
     const focus = spy()
     return run(`Click the increment button.`, {
-      click, focus
+      click, focus, locate
     }).then(function() {
       assert.ok(click.calledWith(app.refs.incrementButton))
       assert.ok(focus.calledWith(app.refs.incrementButton))

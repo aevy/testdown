@@ -1,39 +1,89 @@
 const grammar = require("./grammar.peg.js")
 
 export function parseSuite(text) {
-  return grammar.parse(text).suite
+  return grammar.parse(text, { startRule: "suite" })
 }
 
 export function parseSentence(text) {
   return grammar.parse(text, { startRule: "sentence" })
 }
 
-export function startScenario(scenario, options) {
-  options.onScenarioDone()
+export function parseDefiniteNounPhrase(text) {
+  return grammar.parse(text, { startRule: "definiteNounPhrase" })
 }
 
 const ARBITRARY_ITEM_SELECTOR = (
   "span, a, li, header, h1, h2, h3, p, button, label"
 )
 
+export function runSuiteSequentially(suite, configuration) {
+  return runSequentially(suite.scenarios, x => {
+    console.group(x.title)
+    return runScenario(x, configuration).then(() => {
+      console.groupEnd()
+    })
+  })
+}
+
+function runSequentially(xs, f) {
+  function runAtIndex(i) {
+    return f(xs[i]).then(() => i < xs.length - 1 ? runAtIndex(i + 1) : null)
+  }
+  return runAtIndex(0)
+}
+
+function runScenario(scenario, configuration) {
+  const lastSentenceIndex = scenario.sentences.length - 1
+  function runSentenceAtIndex(
+    i, { place }
+  ) {
+    console.log(scenario.sentences[i].source)
+    return runSentence(
+      scenario.sentences[i], { place, configuration }
+    ).then(
+      nextState =>
+        i < lastSentenceIndex
+          ? runSentenceAtIndex(i + 1, nextState || { place })
+          : null
+    ).catch(
+      e => console.error(e)
+    )
+  }
+  return runSentenceAtIndex(0, { place: configuration.root })
+}
+
+function ignore(promise) {
+  return promise.then(() => null)
+}
+
 export function runSentence(sentence, { place, configuration }) {
+  const locateLocally = noun => configuration.locate(place, noun)
+  const locateGlobally = noun => configuration.locate(configuration.root, noun)
+  const locateOne = (noun, mode = "local") => (
+    mode === "global"
+      ? locateGlobally
+      : locateLocally
+  )(noun).then(nodes => nodes[0])
+
+  const see = noun => ignore(locateLocally(noun))
+
   const types = {
-    wait: ({ specifier }) => (
+    wait: ({ specifier }) => ignore(
       specifier
         ? (specifier.noun
-            ? locate(place, specifier.noun)
+            ? locateLocally(specifier.noun)
             : sleep(specifier.time.milliseconds))
         : waitForPredicate(configuration.isNotWaiting)
-    ).then(() => null),
+    ),
 
     click: noun =>
-      locateOne(place, noun).then(elementClicker(configuration)),
+      locateOne(noun).then(elementClicker(configuration)),
 
     look: ({ noun, mode }) =>
-      locateOne(place, noun).then(x => ({ place: x })),
+      locateOne(noun, mode).then(x => ({ place: x })),
 
     scroll: ({ noun, direction }) => {
-      return locateOne(place, noun).then(x => {
+      return locateOne(noun).then(x => {
         configuration.setScrollTop(x, direction === "top" ? 0 : x.scrollHeight)
       })
     },
@@ -41,15 +91,15 @@ export function runSentence(sentence, { place, configuration }) {
     see: description => {
       // XXX: should refactor
       if (description.quote) {
-        return locate(place, { role: null, description })
+        return see({ role: null, description })
       } else if (description.a) {
-        return locate(place, {
+        return see({
           role: description.a,
           // XXX: support multiple suffixes here
           description: description.suffix ? description.suffix[0] : null
         })
       } else if (description.exactly) {
-        return this.locate(place, {
+        return see({
           role: description.exactly
         }).then(nodes => {
           if (nodes.length !== description.count) {
@@ -64,17 +114,17 @@ export function runSentence(sentence, { place, configuration }) {
       } else if (description.some) {
         if (description.suffix && description.suffix instanceof Array) {
           // Looking for a set of matching things of the same role.
-          return Promise.all(description.suffix.map(x => {
+          return ignore(Promise.all(description.suffix.map(x => {
             if (!x.quote) {
               throw new Error("unexpected")
             }
-            return locate(place, {
+            return see({
               role: description.some,
               description: x,
             })
-          }))
+          })))
         } else {
-          return locate(place, { role: description.some }).then(nodes => {
+          return see({ role: description.some }).then(nodes => {
             if (nodes.length < 3) {
               throw new TooFewElements({
                 place,
@@ -90,7 +140,7 @@ export function runSentence(sentence, { place, configuration }) {
     },
 
     enter: ({ text: { quote }, noun }) => {
-      return locateOne(place, noun).then(element => {
+      return locateOne(noun).then(element => {
         configuration.changeElementValue(element, quote)
         configuration.pressEnter(element)
       })
@@ -101,35 +151,39 @@ export function runSentence(sentence, { place, configuration }) {
   return types[type](sentence.parsed[type])
 }
 
+function getSentenceType(x) {
+  return Object.keys(x.parsed)[0]
+}
+
 function getSelectorForRole(role) {
   return (role && role !== "item")
     ? `[data-role="${role}"]`
     : ARBITRARY_ITEM_SELECTOR
 }
 
-function locate(place, { role, description, triesSoFar }) {
+export function locate(place, { role, description }) {
   return new Promise((resolve, reject) => {
     const selector = getSelectorForRole(role)
     const nodes = place.querySelectorAll(selector)
     const matches = filterCandidates(nodes, description)
     if (matches.length > 0) {
       resolve(matches)
-    } else if (triesSoFar > 10) {
-      reject(new NoMatchingElements({ role, description, place }))
     } else {
-      sleep(100).then(
-        () => locate(place, {
-          role,
-          description,
-          triesSoFar: (triesSoFar || 0) + 1
-        })
-      ).then(resolve, reject)
+      reject(new NoMatchingElements({ role, description, place }))
     }
   })
 }
 
-function locateOne(place, noun) {
-  return locate(place, noun).then(nodes => nodes[0])
+export function retrying({ attempts, delay }, functionToRetry) {
+  return function() {
+    const args = [].slice.call(arguments, 0)
+    const f = () => functionToRetry.apply(null, args)
+    const loop = i =>
+      i > 0
+        ? f().catch(() => sleep(delay).then(() => loop(i - 1)))
+        : f()
+    return loop(attempts)
+  }
 }
 
 function elementClicker(configuration) {
@@ -156,16 +210,6 @@ function visit(configuration, url) {
   configuration.visit(
     url.indexOf(base) === 0 ? url.substr(base.length) : url
   )
-}
-
-function getSuiteId(suite) {
-  return Object.keys(suites).filter(
-    x => suites[x].title === suite.title
-  )[0]
-}
-
-function getSentenceType(x) {
-  return Object.keys(x.parsed)[0]
 }
 
 class Failure extends Error {

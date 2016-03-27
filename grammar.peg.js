@@ -4,23 +4,19 @@
   }
 }
 
-start = testSuite
+suite
+  = "#" space title:line blank (comment blank)? scenarios:scenario*
+{
+  return {
+    title: title,
+    scenarios: scenarios
+  }
+}
 
 space = [ \n]+
 blank = [ \n]*
 newline = " "* "\n"
 line = text:[^\n]+ newline { return trim(text.join("")) }
-
-testSuite
-  = "#" space title:line blank (comment blank)? scenarios:scenario*
-{
-  return {
-    suite: {
-      title: title,
-      scenarios: scenarios
-    }
-  }
-}
 
 scenario
   = "##" space "Scenario:" space title:line blank
