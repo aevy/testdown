@@ -17,37 +17,55 @@ const ARBITRARY_ITEM_SELECTOR = (
 )
 
 export function runSuiteSequentially(suite, configuration) {
-  return runSequentially(suite.scenarios, x => {
+  return runSequentially(suite.scenarios, (x, i) => {
     console.group(x.title)
-    return runScenario(x, configuration).then(() => {
+    return runScenario(x, configuration).then(result => {
       console.groupEnd()
+      return {
+        scenario: x.title,
+        scenarioIndex: i,
+        result,
+        error: result[result.length - 1].error,
+      }
     })
   })
 }
 
 function runSequentially(xs, f) {
-  function runAtIndex(i) {
-    return f(xs[i]).then(() => i < xs.length - 1 ? runAtIndex(i + 1) : null)
+  function runFromIndex(i) {
+    console.info(i)
+    return f(xs[i], i).then(
+      result => i < xs.length - 1
+        ? runFromIndex(i + 1).then(rest => [result, ...rest])
+        : [result]
+    )
   }
-  return runAtIndex(0)
+  return runFromIndex(0)
 }
 
 function runScenario(scenario, configuration) {
   const lastSentenceIndex = scenario.sentences.length - 1
-  function runSentenceAtIndex(
-    i, { place }
-  ) {
-    console.log(scenario.sentences[i].source)
+  function runSentenceAtIndex(i, { place }) {
+    const sentence = scenario.sentences[i]
+    console.log(sentence.source)
+    const info = {
+      sentence: sentence.source,
+      sentenceIndex: i,
+      error: false,
+    }
     return runSentence(
-      scenario.sentences[i], { place, configuration }
+      sentence, { place, configuration }
     ).then(
       nextState =>
         i < lastSentenceIndex
-          ? runSentenceAtIndex(i + 1, nextState || { place })
-          : null
-    ).catch(
-      e => console.error(e)
-    )
+          ? runSentenceAtIndex(i + 1, nextState || { place }).then(
+              rest => [info, ...rest]
+            )
+          : [info]
+    ).catch(error => {
+      console.error(error)
+      return [{ ...info, error: error.message }]
+    })
   }
   return runSentenceAtIndex(0, { place: configuration.root })
 }
@@ -293,6 +311,7 @@ function filterCandidates(nodeList, description) {
 }
 
 function getTextContentOfNode(node) {
+  // JSDOM doesn't support `innerText`, but most browsers do.
   return node.value || node.innerText || node.textContent
 }
 
