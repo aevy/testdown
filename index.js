@@ -330,3 +330,10 @@ function findBetterClickTarget(node) {
     return null
   }
 }
+
+export function reactConfiguration({ ReactTestUtils }) {
+  return {
+    click: target => ReactTestUtils.Simulate.click(target),
+    focus: target => ReactTestUtils.Simulate.focus(target),
+  }
+}

@@ -1,6 +1,6 @@
 import React from "react"
 import ReactDOM from "react-dom"
-import { Simulate } from "react-addons-test-utils"
+import ReactTestUtils from "react-addons-test-utils"
 
 import * as Testdown from "../index.js"
 
@@ -31,8 +31,9 @@ window.test = function test() {
   const suite = Testdown.parseSuite(exampleSuite)
   Testdown.runSuiteSequentially(suite, {
     root: app,
-    locate: Testdown.locate
-  })
+    locate: Testdown.locate,
+    ...Testdown.reactConfiguration({ ReactTestUtils }),
+  }).then(x => console.info(x))
 }
 
 test()
