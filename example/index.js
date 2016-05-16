@@ -8,11 +8,23 @@ import exampleSuite from "./example-suite.md"
 
 let state
 
+const actions = {
+  increment: () => setState({ counter: state.counter + 1 }),
+}
+
 class App extends React.Component {
   render() {
     return (
       <div data-role="app">
-        <button data-role="button">Click me</button>
+        <span data-role="counter">
+          {this.props.counter}
+        </span>
+        <button
+          data-role="button"
+          onClick={actions.increment}
+        >
+          Click me
+        </button>
       </div>
     )
   }
@@ -21,11 +33,20 @@ class App extends React.Component {
 document.body.innerHTML += '<div id="app"/>'
 
 function setState(newState) {
-  state = newState
-  ReactDOM.render(<App state={state}/>, app)
+  location.hash = JSON.stringify({ ...state, ...newState })
 }
 
-setState({})
+window.onhashchange = function(hash) {
+  console.info("hashchange")
+  state = JSON.parse(location.hash.substr(1))
+  ReactDOM.render(<App {...state}/>, app)
+}
+
+if (location.hash) {
+  onhashchange()
+} else {
+  setState({ counter: 0 })
+}
 
 window.test = function test() {
   const suite = Testdown.parseSuite(exampleSuite)
@@ -36,4 +57,4 @@ window.test = function test() {
   }).then(x => console.info(x))
 }
 
-test()
+setTimeout(test, 0)
