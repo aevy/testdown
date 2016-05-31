@@ -37,22 +37,22 @@ function setState(newState) {
 }
 
 window.onhashchange = function(hash) {
-  console.info("hashchange")
-  state = JSON.parse(location.hash.substr(1))
-  ReactDOM.render(<App {...state}/>, app)
+  if (location.hash) {
+    state = JSON.parse(location.hash.substr(1))
+    ReactDOM.render(<App {...state}/>, app)
+  } else {
+    setState({ counter: 0 })
+  }
 }
 
-if (location.hash) {
-  onhashchange()
-} else {
-  setState({ counter: 0 })
-}
+onhashchange()
 
 window.test = function test() {
   const suite = Testdown.parseSuite(exampleSuite)
   Testdown.runSuiteSequentially(suite, {
     root: app,
     locate: Testdown.locate,
+    visit: url => location.hash = url,
     ...Testdown.reactConfiguration({ ReactTestUtils }),
   }).then(x => console.info(x))
 }

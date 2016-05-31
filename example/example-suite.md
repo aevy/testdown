@@ -14,4 +14,6 @@ See an app. See a button.
 
 ## Scenario: Clicking the button
 
-Click the button.
+See a counter: "0".
+Click the button. See a counter: "1".
+Click the button. See a counter: "2".

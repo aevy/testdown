@@ -19,21 +19,28 @@ const ARBITRARY_ITEM_SELECTOR = (
 export function runSuiteSequentially(suite, configuration) {
   return runSequentially(suite.scenarios, (x, i) => {
     console.group(x.title)
-    return runScenario(x, configuration).then(result => {
-      console.groupEnd()
-      return {
-        scenario: x.title,
-        scenarioIndex: i,
-        result,
-        error: result[result.length - 1].error,
-      }
-    })
-  })
+    return (
+      visit(configuration, "")
+        .then(() => runScenario(x, configuration))
+        .then(result => {
+          console.groupEnd()
+          const scenarioResult = {
+            scenario: x.title,
+            scenarioIndex: i,
+            result,
+            error: result[result.length - 1].error,
+          }
+          configuration.afterScenario(scenarioResult)
+          return scenarioResult
+        })
+    )
+  }).then(
+    result => visit(configuration, "").then(() => result)
+  )
 }
 
 function runSequentially(xs, f) {
   function runFromIndex(i) {
-    console.info(i)
     return f(xs[i], i).then(
       result => i < xs.length - 1
         ? runFromIndex(i + 1).then(rest => [result, ...rest])
@@ -47,7 +54,7 @@ function runScenario(scenario, configuration) {
   const lastSentenceIndex = scenario.sentences.length - 1
   function runSentenceAtIndex(i, { place }) {
     const sentence = scenario.sentences[i]
-    console.log(sentence.source)
+    console.info(sentence.source)
     const info = {
       sentence: sentence.source,
       sentenceIndex: i,
@@ -67,7 +74,7 @@ function runScenario(scenario, configuration) {
       return [{ ...info, error: error.message }]
     })
   }
-  return runSentenceAtIndex(0, { place: configuration.root })
+  return runSentenceAtIndex(0, { place: configuration.root() })
 }
 
 function ignore(promise) {
@@ -76,7 +83,7 @@ function ignore(promise) {
 
 export function runSentence(sentence, { place, configuration }) {
   const locateLocally = noun => configuration.locate(place, noun)
-  const locateGlobally = noun => configuration.locate(configuration.root, noun)
+  const locateGlobally = noun => configuration.locate(configuration.root(), noun)
   const locateOne = (noun, mode = "local") => (
     mode === "global"
       ? locateGlobally
@@ -91,7 +98,7 @@ export function runSentence(sentence, { place, configuration }) {
         ? (specifier.noun
             ? locateLocally(specifier.noun)
             : sleep(specifier.time.milliseconds))
-        : waitForPredicate(configuration.isNotWaiting)
+        : sleep().then(() => waitForPredicate(configuration.isNotWaiting))
     ),
 
     click: noun =>
@@ -117,7 +124,7 @@ export function runSentence(sentence, { place, configuration }) {
           description: description.suffix ? description.suffix[0] : null
         })
       } else if (description.exactly) {
-        return see({
+        return locateLocally({
           role: description.exactly
         }).then(nodes => {
           if (nodes.length !== description.count) {
@@ -142,7 +149,7 @@ export function runSentence(sentence, { place, configuration }) {
             })
           })))
         } else {
-          return see({ role: description.some }).then(nodes => {
+          return locateLocally({ role: description.some }).then(nodes => {
             if (nodes.length < 3) {
               throw new TooFewElements({
                 place,
@@ -228,6 +235,7 @@ function visit(configuration, url) {
   configuration.visit(
     url.indexOf(base) === 0 ? url.substr(base.length) : url
   )
+  return sleep(0)
 }
 
 class Failure extends Error {
@@ -326,7 +334,7 @@ function waitForPredicate(p) {
     }
   }
   return Promise.race([
-    wait,
+    wait(),
     sleep(1000 * WAIT_TIMEOUT_SECS).then(() => {
       throw new Timeout()
     })
@@ -351,8 +359,25 @@ function findBetterClickTarget(node) {
 }
 
 export function reactConfiguration({ ReactTestUtils }) {
+  const { Simulate } = ReactTestUtils
   return {
-    click: target => ReactTestUtils.Simulate.click(target),
-    focus: target => ReactTestUtils.Simulate.focus(target),
+    click: target => Simulate.click(target),
+    focus: target => Simulate.focus(target),
+    changeElementValue: (element, value) => {
+      element.value = value
+      Simulate.change(element)
+    },
+    pressEnter: element => {
+      Simulate.keyDown(element, {
+        key: "Enter",
+        keyCode: 13,
+        which: 13
+      })
+      Simulate.submit(element)
+    },
+    setScrollTop: (element, x) => {
+      element.scrollTop = x
+      Simulate.scroll(element)
+    },
   }
 }
