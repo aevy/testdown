@@ -17,24 +17,9 @@ const ARBITRARY_ITEM_SELECTOR = (
 )
 
 export function runSuiteSequentially(suite, configuration) {
-  return runSequentially(suite.scenarios, (x, i) => {
-    console.group(x.title)
-    return (
-      visit(configuration, "")
-        .then(() => runScenario(x, configuration))
-        .then(result => {
-          console.groupEnd()
-          const scenarioResult = {
-            scenario: x.title,
-            scenarioIndex: i,
-            result,
-            error: result[result.length - 1].error,
-          }
-          configuration.afterScenario(scenarioResult)
-          return scenarioResult
-        })
-    )
-  }).then(
+  return runSequentially(suite.scenarios, (x, i) => (
+    visit(configuration, "").then(() => runScenario(x, configuration))
+  )).then(
     result => visit(configuration, "").then(() => result)
   )
 }
@@ -51,30 +36,48 @@ function runSequentially(xs, f) {
 }
 
 function runScenario(scenario, configuration) {
+  if (configuration.beforeScenario) {
+    configuration.beforeScenario(scenario)
+  }
+
   const lastSentenceIndex = scenario.sentences.length - 1
+
   function runSentenceAtIndex(i, { place }) {
     const sentence = scenario.sentences[i]
-    console.info(sentence.source)
     const info = {
       sentence: sentence.source,
       sentenceIndex: i,
       error: false,
     }
+
     return runSentence(
       sentence, { place, configuration }
-    ).then(
-      nextState =>
-        i < lastSentenceIndex
-          ? runSentenceAtIndex(i + 1, nextState || { place }).then(
-              rest => [info, ...rest]
-            )
-          : [info]
-    ).catch(error => {
-      console.error(error)
-      return [{ ...info, error: error.message }]
+    ).then(nextState => {
+      if (i < lastSentenceIndex) {
+        return runSentenceAtIndex(i + 1, nextState || { place }).then(
+          rest => [info, ...rest]
+        )
+      } else {
+        return [info]
+      }
+    }).catch(error => {
+      return sleep(configuration.errorDelay || 1).then(
+        () => [{ ...info, error: error.message }]
+      )
     })
   }
-  return runSentenceAtIndex(0, { place: configuration.root() })
+
+  return (
+    runSentenceAtIndex(0, { place: configuration.root() })
+      .then(result => {
+        const scenarioResult = {
+          scenario: scenario.title,
+          result,
+          error: result[result.length - 1].error,
+        }
+        return scenarioResult
+      })
+  )
 }
 
 function ignore(promise) {
@@ -82,6 +85,10 @@ function ignore(promise) {
 }
 
 export function runSentence(sentence, { place, configuration }) {
+  if (configuration.beforeSentence) {
+    configuration.beforeSentence(sentence.source)
+  }
+
   const locateLocally = noun => configuration.locate(place, noun)
   const locateGlobally = noun => configuration.locate(configuration.root(), noun)
   const locateOne = (noun, mode = "local") => (
@@ -173,7 +180,14 @@ export function runSentence(sentence, { place, configuration }) {
   }
 
   const type = getSentenceType(sentence)
-  return types[type](sentence.parsed[type])
+  const afterSentence = configuration.afterSentence || (() => {})
+  return types[type](sentence.parsed[type]).then(x => {
+    afterSentence(sentence.source)
+    return x
+  }).catch(e => {
+    afterSentence(sentence.source, e)
+    throw e
+  })
 }
 
 function getSentenceType(x) {
