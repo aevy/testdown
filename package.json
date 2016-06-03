@@ -1,6 +1,6 @@
 {
   "name": "testdown",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Human-readable smoke tests for single-page web apps",
   "main": "./dist/index.js",
   "files": [
@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/aevy/testdown/issues"
   },
-  "homepage": "https://github.com/aevy/testdown#readme",
+  "homepage": "https://aevy.github.io/testdown",
   "devDependencies": {
     "babel-cli": "^6.6.5",
     "babel-loader": "^6.2.4",
@@ -45,8 +45,5 @@
     "sinon": "^1.17.3",
     "webpack": "^1.12.14",
     "webpack-dev-server": "^1.14.1"
-  },
-  "dependencies": {
-    "react-addons-test-utils": "^0.14.7"
   }
 }
