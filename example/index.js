@@ -6,6 +6,8 @@ import * as Testdown from "../index.js"
 
 import exampleSuite from "./example-suite.md"
 
+require("es6-promise").polyfill()
+
 let state
 
 const actions = {
@@ -53,8 +55,11 @@ window.test = function test() {
     root: () => app,
     locate: Testdown.locate,
     visit: url => location.hash = url,
+    beforeScenario: scenario => console.log(scenario.title),
+    afterSentence: (sentence, error) =>
+      console.log("  " + sentence + (error ? " " + error : "")),
     ...Testdown.reactConfiguration({ ReactTestUtils }),
-  }).then(x => console.info(x))
+  }).then(x => console.log("DONE"))
 }
 
 setTimeout(test, 0)

@@ -1,0 +1,14 @@
+Locating the app
+  See an app.
+Locating a banana
+  See a banana. Failure: I don't see a banana
+Locating the app and the button
+  See an app.
+  See a button.
+Clicking the button
+  See a counter: "0".
+  Click the button.
+  See a counter: "1".
+  Click the button.
+  See a counter: "2".
+DONE
