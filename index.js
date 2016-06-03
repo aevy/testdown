@@ -35,49 +35,62 @@ function runSequentially(xs, f) {
   return runFromIndex(0)
 }
 
-function runScenario(scenario, configuration) {
-  if (configuration.beforeScenario) {
-    configuration.beforeScenario(scenario)
-  }
-
-  const lastSentenceIndex = scenario.sentences.length - 1
-
-  function runSentenceAtIndex(i, { place }) {
-    const sentence = scenario.sentences[i]
-    const info = {
-      sentence: sentence.source,
-      sentenceIndex: i,
-      error: false,
-    }
-
-    return runSentence(
-      sentence, { place, configuration }
-    ).then(nextState => {
-      if (i < lastSentenceIndex) {
-        return runSentenceAtIndex(i + 1, nextState || { place }).then(
-          rest => [info, ...rest]
-        )
-      } else {
-        return [info]
-      }
-    }).catch(error => {
-      return sleep(configuration.errorDelay || 1).then(
-        () => [{ ...info, error: error.message }]
+//
+// This is a map-like promise recursion scheme which stops on error
+// and keeps state like a fold.  It's a generalized version of the
+// function that runs a scenario, extracted to make that function
+// less cluttered.
+//
+// The return value is an array made from applications of either
+// `describe` or `fail`, depending on whether `f` failed for the
+// corresponding value of `xs`.
+//
+function iterateOverSentencesWithThreadedState(
+  xs, initialState, f, describe, fail
+) {
+  function loop(i, state) {
+    const x = xs[i]
+    return f(x, state).then(nextState => {
+      return Promise.resolve(describe(x)).then(info =>
+        i < xs.length - 1
+          ? loop(i + 1, nextState || state)
+              .then(rest => [info, ...rest])
+          : [info]
       )
-    })
+    }).catch(error =>
+      Promise.resolve(fail(x, error)).then(info => [info])
+    )
   }
+  return loop(0, initialState)
+}
 
-  return (
-    runSentenceAtIndex(0, { place: configuration.root() })
-      .then(result => {
-        const scenarioResult = {
-          scenario: scenario.title,
-          result,
-          error: result[result.length - 1].error,
-        }
-        return scenarioResult
-      })
-  )
+function runScenario(scenario, configuration) {
+  const { sentences, title } = scenario
+  const { beforeScenario, errorDelay, root } = configuration
+  const initialState = { place: root() }
+
+  if (beforeScenario)
+    beforeScenario(scenario)
+
+  return iterateOverSentencesWithThreadedState(
+    sentences, initialState,
+    (sentence, { place }) =>
+      runSentence(sentence, { place, configuration }),
+    sentence =>
+      ({ sentence: sentence.source, error: false }),
+    (sentence, error) =>
+      sleep(errorDelay).then(() => ({
+        sentence: sentence.source, error: error.message
+      }))
+  ).then(result => ({
+    scenario: title,
+    error: last(result).error,
+    result,
+  }))
+}
+
+function last(xs) {
+  return xs[xs.length - 1]
 }
 
 function ignore(promise) {
