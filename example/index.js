@@ -50,7 +50,7 @@ onhashchange()
 window.test = function test() {
   const suite = Testdown.parseSuite(exampleSuite)
   Testdown.runSuiteSequentially(suite, {
-    root: app,
+    root: () => app,
     locate: Testdown.locate,
     visit: url => location.hash = url,
     ...Testdown.reactConfiguration({ ReactTestUtils }),
