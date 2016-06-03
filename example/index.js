@@ -51,7 +51,7 @@ onhashchange()
 
 window.test = function test() {
   const suite = Testdown.parseSuite(exampleSuite)
-  Testdown.runSuiteSequentially(suite, {
+  Testdown.runSuite(suite, {
     root: () => app,
     locate: Testdown.locate,
     visit: url => location.hash = url,

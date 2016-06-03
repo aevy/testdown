@@ -16,23 +16,22 @@ const ARBITRARY_ITEM_SELECTOR = (
   "span, a, li, header, h1, h2, h3, p, button, label"
 )
 
-export function runSuiteSequentially(suite, configuration) {
-  return runSequentially(suite.scenarios, (x, i) => (
-    visit(configuration, "").then(() => runScenario(x, configuration))
+export function runSuite(suite, configuration) {
+  const reset = () => visit(configuration, "")
+  return promiseMap(suite.scenarios, (x, i) => (
+    reset().then(() => runScenario(x, configuration))
   )).then(
-    result => visit(configuration, "").then(() => result)
+    result => reset().then(() => result)
   )
 }
 
-function runSequentially(xs, f) {
-  function runFromIndex(i) {
-    return f(xs[i], i).then(
-      result => i < xs.length - 1
-        ? runFromIndex(i + 1).then(rest => [result, ...rest])
-        : [result]
-    )
-  }
-  return runFromIndex(0)
+// Kind of like `Promise.all`, but sequential.
+function promiseMap(xs, f) {
+  const n = xs.length - 1
+  const loop = i => f(xs[i], i).then(
+    y => i >= n ? [y] : loop(i + 1).then(ys => [y, ...ys])
+  )
+  return loop(0)
 }
 
 //
@@ -89,13 +88,8 @@ function runScenario(scenario, configuration) {
   }))
 }
 
-function last(xs) {
-  return xs[xs.length - 1]
-}
-
-function ignore(promise) {
-  return promise.then(() => null)
-}
+function last(xs) { return xs[xs.length - 1] }
+function ignore(promise) { return promise.then(() => null) }
 
 export function runSentence(sentence, { place, configuration }) {
   if (configuration.beforeSentence) {
@@ -226,7 +220,7 @@ export function locate(place, { role, description }) {
   })
 }
 
-export function retrying({ attempts, delay }, functionToRetry) {
+export function retrying(functionToRetry, { attempts, delay }) {
   return function() {
     const args = [].slice.call(arguments, 0)
     const f = () => functionToRetry.apply(null, args)

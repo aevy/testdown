@@ -373,7 +373,7 @@ describe("runner", function() {
         return runSentence(parseSentence("Wait for the thing."), {
           place: body,
           configuration: {
-            locate: retrying({ attempts: 3, delay: 100 }, locate)
+            locate: retrying(locate, { attempts: 3, delay: 100 })
           }
         }).then(x => {
           assert.equal(x, null)
